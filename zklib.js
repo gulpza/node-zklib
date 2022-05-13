@@ -69,22 +69,22 @@ class ZKLib {
         try{
             if(!this.zklibTcp.socket){
                 try{
-                    await this.zklibTcp.createSocket(cbErr,cbClose)
-                   
-
+                   await this.zklibTcp.createSocket(cbErr,cbClose)
+                 
                 }catch(err){
+               
                     throw err;
                 }
               
                 try{
                     await this.zklibTcp.connect();
-                    console.log('ok tcp')
                 }catch(err){
                     throw err;
                 }
             }      
 
             this.connectionType = 'tcp'
+            return { status: true, message: 'connected tcp' }
 
         }catch(err){
             try{
@@ -101,8 +101,9 @@ class ZKLib {
                     await this.zklibUdp.connect()
                 }   
                 
-                console.log('ok udp')
+                // console.log('ok udp')
                 this.connectionType = 'udp'
+                return { status: true, message: 'connected udp' }
             }catch(err){
 
 
@@ -133,6 +134,88 @@ class ZKLib {
         )
     }
 
+    async getTime(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getTime(),
+            ()=> this.zklibUdp.getTime()
+        )
+    }
+
+    async getSerialNumber(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getSerialNumber()
+        )
+    }
+
+    async getDeviceVersion(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getDeviceVersion()
+        )
+    }
+    async getDeviceName(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getDeviceName()
+        )
+    }
+    async getPlatform(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getPlatform()
+        )
+    }
+    async getOS(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getOS()
+        )
+    }
+    async getWorkCode(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getWorkCode()
+        )
+    }
+    async getPIN(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getPIN()
+        )
+    }
+    async getFaceOn(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getFaceOn()
+        )
+    }
+    async getSSR(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getSSR()
+        )
+    }
+    async getFirmware(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getFirmware()
+        )
+    }
+    async restart(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.restart()
+        )
+    }
+    
+    async setUser(uid, userid, name, password, role = 0, cardno = 0){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.setUser(uid, userid, name, password, role, cardno)
+        )
+    }
+
+    async delUser(userid){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.delUser(userid)
+        )
+    }
+
+    async getAttendanceSize(){
+        return await this.functionWrapper(
+            ()=> this.zklibTcp.getAttendanceSize()
+        )
+    }
+
     async getAttendances(cb){
         return await this.functionWrapper(
             ()=> this.zklibTcp.getAttendances(cb),
@@ -160,13 +243,7 @@ class ZKLib {
             ()=> this.zklibUdp.freeData()
         )
     }
-    
-	async getTime() {
-		return await this.functionWrapper(
-			() => this.zklibTcp.getTime(),
-			() => this.zklibUdp.getTime()
-		);
-	}
+
 
     async disableDevice(){
         return await this. functionWrapper(
@@ -221,8 +298,6 @@ class ZKLib {
     setTimerSchedule(cb, timer){
         this.timer = setTimeout(cb,timer)
     }
-
-    
 
 }
 

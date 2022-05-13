@@ -1,6 +1,4 @@
-const dgram = require('dgram');
-const timeParser = require('./timeParser');
-
+const dgram = require('dgram')
 const {
   createUDPHeader,
   decodeUserData28,
@@ -419,10 +417,6 @@ class ZKLibUDP {
     return await this.executeCmd(COMMANDS.CMD_FREE_DATA, '')
   }
 
-  async getTime() {
-		const time = await this.executeCmd(COMMANDS.CMD_GET_TIME, '');
-		return timeParser.decode(time.readUInt32LE(8));
-	}
 
   async getInfo() {
     const data = await this.executeCmd(COMMANDS.CMD_GET_FREE_SIZES, '')
@@ -434,6 +428,16 @@ class ZKLibUDP {
       }
     } catch (err) {
       return Promise.reject(err)
+    }
+  }
+
+  async getTime() {
+    try {
+      const t = await this.executeCmd(COMMANDS.CMD_GET_TIME, '')
+      return timeParser.decode(t.readUInt32LE(8));
+    }
+    catch(err){
+      return Promise.reject(err);
     }
   }
 
@@ -463,7 +467,7 @@ class ZKLibUDP {
   async getRealTimeLogs(cb = () => { }) {
     this.replyId++;
     const buf = createUDPHeader(COMMANDS.CMD_REG_EVENT, this.sessionId, this.replyId, REQUEST_DATA.GET_REAL_TIME_EVENT)
-
+  console.log(66666666666)
     this.socket.send(buf, 0, buf.length, this.port, this.ip, (err) => {
 
     })

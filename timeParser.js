@@ -2,7 +2,7 @@
  *
  * @param {number} time
  */
-exports.decode = time => {
+ exports.decode = time => {
 	const second = time % 60;
 	time = (time - second) / 60;
 

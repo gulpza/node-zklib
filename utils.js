@@ -151,7 +151,7 @@ module.exports.decodeRecordData40 = (recordData)=>{
         .toString('ascii')
         .split('\0')
         .shift(),
-        recordTime: parseTimeToDate(recordData.readUInt32LE(27)),
+        recordTime: parseTimeToDate(recordData.readUInt32LE(27)).toString(),
       }
       return record
 }
@@ -197,7 +197,6 @@ module.exports.decodeUDPHeader = (header)=> {
 module.exports.decodeTCPHeader = (header) => {
     const recvData = header.subarray(8)
     const payloadSize = header.readUIntLE(4,2)
-
     const commandId = recvData.readUIntLE(0,2)
     const checkSum = recvData.readUIntLE(2,2)
     const sessionId = recvData.readUIntLE(4,2)

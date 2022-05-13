@@ -1,7 +1,6 @@
 const net = require('net')
-const timeParser = require('./timeParser');
-
 const { MAX_CHUNK, COMMANDS, REQUEST_DATA } = require('./constants')
+const timeParser = require('./timestamp_parser');
 const { createTCPHeader,
   exportErrorMessage,
   removeTcpHeader,
@@ -12,6 +11,7 @@ const { createTCPHeader,
   decodeTCPHeader } = require('./utils')
 
 const { log } = require('./helpers/errorLog')
+const { error } = require('console')
 
 class ZKLibTCP {
   constructor(ip, port, timeout) {
@@ -122,6 +122,7 @@ class ZKLibTCP {
         replyBuffer = Buffer.concat([replyBuffer, data])
         if (checkNotEventTCP(data)) return;
         clearTimeout(timer)   
+   
         const header = decodeTCPHeader(replyBuffer.subarray(0,16));
 
         if(header.commandId === COMMANDS.CMD_DATA){
@@ -140,8 +141,6 @@ class ZKLibTCP {
         }
       }
 
-
-      
       this.socket.on('data', handleOnData)
 
       this.socket.write(msg, null, err => {
@@ -154,7 +153,9 @@ class ZKLibTCP {
         }, this.timeout)
 
       })
-    })
+    }).catch(function () {
+      // console.log("Promise Rejected");
+     });
 
   }
 
@@ -224,13 +225,18 @@ class ZKLibTCP {
 
       this.replyId++;
       const buf = createTCPHeader(COMMANDS.CMD_DATA_WRRQ, this.sessionId, this.replyId, reqData)
-      let reply = null
+      let reply = null;
 
       try {
         reply = await this.requestData(buf)
-
       } catch (err) {
         reject(err)
+        console.log(reply)
+
+      }
+
+      if(!reply){
+        return resolve({ data: [], mode: 8 })
       }
 
       const header = decodeTCPHeader(reply.subarray(0, 16))
@@ -380,7 +386,7 @@ class ZKLibTCP {
       
     }
     
-    return { data: users, err: data.err }
+    return { data: users }
   }
 
 
@@ -419,6 +425,9 @@ class ZKLibTCP {
 
 
     const RECORD_PACKET_SIZE = 40
+    if(data.data.length === 0){
+      return { data: [] }
+    }
 
     let recordData = data.data.subarray(4)
     let records = []
@@ -428,18 +437,14 @@ class ZKLibTCP {
       recordData = recordData.subarray(RECORD_PACKET_SIZE)
     }
 
-    return { data: records, err: data.err }
+    return { data: records }
 
   }
 
-  async getTime() {
-		const time = await this.executeCmd(COMMANDS.CMD_GET_TIME, '');
-		return timeParser.decode(time.readUInt32LE(8));
-	}
-  
   async freeData() {
     return await this.executeCmd(COMMANDS.CMD_FREE_DATA, '')
   }
+
 
   async disableDevice() {
     return await this.executeCmd(COMMANDS.CMD_DISABLEDEVICE, REQUEST_DATA.DISABLE_DEVICE)
@@ -472,26 +477,236 @@ class ZKLibTCP {
     }
   }
 
+  
+  
+  
+  
+  async getSerialNumber() {
+    const keyword = '~SerialNumber';
+    try {
+      const data = await this.executeCmd(11, keyword)
+      return data.slice(8).toString('utf8').replace(keyword + '=', '');
+      
+      
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  
+  async getDeviceVersion() {
+    const keyword = '~ZKFPVersion';;
+    try {
+      const data = await this.executeCmd(COMMANDS.CMD_OPTIONS_RRQ, keyword)
+      
+      return data.slice(8).toString('ascii').replace(keyword + '=', '');
+      
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  
+  async getDeviceName() {
+    const keyword = '~DeviceName';
+    try {
+      const data = await this.executeCmd(COMMANDS.CMD_OPTIONS_RRQ, keyword)
+      
+      return data.slice(8).toString('ascii').replace(keyword + '=', '');
+      
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  
+  async getPlatform() {
+    const keyword = '~Platform';
+    try {
+      const data = await this.executeCmd(COMMANDS.CMD_OPTIONS_RRQ, keyword)
+      
+      return data.slice(8).toString('ascii').replace(keyword + '=', '');
+      
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  
+  async getOS() {
+    const keyword = '~OS';
+    try {
+      const data = await this.executeCmd(COMMANDS.CMD_OPTIONS_RRQ, keyword)
+      
+      return data.slice(8).toString('ascii').replace(keyword + '=', '');
+      
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  
+  async getWorkCode() {
+    const keyword = 'WorkCode';
+    try {
+      const data = await this.executeCmd(COMMANDS.CMD_OPTIONS_RRQ, keyword)
+      
+      return data.slice(8).toString('ascii').replace(keyword + '=', '');
+      
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  
+  async getPIN() {
+    const keyword = '~PIN2Width';
+    try {
+      const data = await this.executeCmd(COMMANDS.CMD_OPTIONS_RRQ, keyword)
+      
+      return data.slice(8).toString('ascii').replace(keyword + '=', '');
+      
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  async getFaceOn() {
+    const keyword = 'FaceFunOn';
+    try {
+      const data = await this.executeCmd(COMMANDS.CMD_OPTIONS_RRQ, keyword)
+      if (data.slice(8).toString('ascii').replace(keyword + '=', '').includes('0'))
+      return 'No';
+      else
+      return 'Yes'
+
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  
+  async getSSR() {
+    const keyword = '~SSR';
+    try {
+      const data = await this.executeCmd(COMMANDS.CMD_OPTIONS_RRQ, keyword)
+      
+      return data.slice(8).toString('ascii').replace(keyword + '=', '')
+
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async getFirmware() {
+    try {
+      const data = await this.executeCmd(1100, '')
+      
+      return data.slice(8).toString('ascii')
+
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async restart() {
+    try {
+      const data = await this.executeCmd(COMMANDS.CMD_RESTART, '')
+      return data.slice(8).toString('ascii')
+
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async getTime() {
+    try {
+      const t = await this.executeCmd(COMMANDS.CMD_GET_TIME, '')
+      return timeParser.decode(t.readUInt32LE(8));
+    }
+    catch(err){
+      return Promise.reject(err);
+    }
+  }
+  
+  async setUser(uid, userid, name, password, role = 0, cardno = 0) {
+    try{
+    if (
+      parseInt(uid) === 0 ||
+      parseInt(uid) > 3000 ||
+        userid.length > 9 ||
+        name.length > 24 ||
+        password.length > 8 ||
+        cardno.length > 10
+        ) {
+          return false;
+        }
+
+    const command_string = Buffer.alloc(72);
+    command_string.writeUInt16LE(uid, 0);
+    command_string.writeUInt16LE(role, 2);
+    command_string.write(password, 3, 8);
+    command_string.write(name, 11, 24);
+    command_string.writeUInt16LE(cardno, 35);
+    command_string.writeUInt32LE(0, 40);
+    command_string.write(userid ? userid.toString(9) : '', 48);
+
+    //console.log(command_string);
+    return await this.executeCmd(COMMANDS.CMD_USER_WRQ, command_string);
+    }
+    catch(e){
+    console.log(e);
+    console.log('duh');
+  }
+
+}
+
+async delUser(userid) {
+    try{
+      const command_string = Buffer.alloc(8, 2);
+      command_string.writeUInt16LE(userid, 0);
+      return await this.executeCmd(COMMANDS.CMD_DELETE_USER, command_string)
+
+
+    }
+    catch(e){
+      console.log(e)
+    }
+
+}
+
+async getAttendanceSize() {
+  try {
+    const data = await this.executeCmd(COMMANDS.CMD_GET_FREE_SIZES, '')
+    return data.readUIntLE(40, 4);
+
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
   async clearAttendanceLog (){
     return await this.executeCmd(COMMANDS.CMD_CLEAR_ATTLOG, '')
   }
 
   async getRealTimeLogs(cb = () => { }) {
     this.replyId++;
+    
+    try{
+ 
+      const buf = createTCPHeader(COMMANDS.CMD_REG_EVENT, this.sessionId, this.replyId, Buffer.from([0x01, 0x00, 0x00, 0x00]))
 
-    const buf = createTCPHeader(COMMANDS.CMD_REG_EVENT, this.sessionId, this.replyId, Buffer.from([0x01, 0x00, 0x00, 0x00]))
+      this.socket.write(buf, null, err => {
 
-    this.socket.write(buf, null, err => {
-    })
+      })
+  
+      this.socket.listenerCount('data') === 0 && this.socket.on('data', (data) => {
+      
+         if (!checkNotEventTCP(data)) return;
 
-    this.socket.listenerCount('data') === 0 && this.socket.on('data', (data) => {
-
-      if (!checkNotEventTCP(data)) return;
-      if (data.length > 16) {
-        cb(decodeRecordRealTimeLog52(data))
-      }
-
-    })
+        if (data.length > 16) {
+         
+          cb(decodeRecordRealTimeLog52(data))
+        }
+  
+      })
+      
+    }
+    catch(err){
+      return Promise.reject(err);
+    }
 
   }
 
