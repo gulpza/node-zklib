@@ -59,7 +59,6 @@ class ZKLibTCP {
         if (reply) {
           resolve(true)
         } else {
-
           reject(new Error('NO_REPLY_ON_CMD_CONNECT'))
         }
       } catch (err) {
@@ -357,7 +356,7 @@ class ZKLibTCP {
     let data = null
     try {
       data = await this.readWithBuffer(REQUEST_DATA.GET_USERS)
- 
+  
     } catch (err) {
       return Promise.reject(err)
     }
@@ -371,8 +370,11 @@ class ZKLibTCP {
       }
     }
 
-
     const USER_PACKET_SIZE = 72
+
+    if(data.data.length ===0){
+      return { data: [] }
+    }
 
     let userData = data.data.subarray(4)
 
@@ -458,7 +460,7 @@ class ZKLibTCP {
     try {
       await this.executeCmd(COMMANDS.CMD_EXIT, '')
     } catch (err) {
-
+      throw(err)
     }
     return await this.closeSocket()
   }
@@ -476,10 +478,6 @@ class ZKLibTCP {
       return Promise.reject(err)
     }
   }
-
-  
-  
-  
   
   async getSerialNumber() {
     const keyword = '~SerialNumber';
