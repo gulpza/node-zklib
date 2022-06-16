@@ -95,12 +95,15 @@ class ZKLibTCP {
       })
 
       this.socket.write(msg, null, async (err) => {
+   
         if (err) {
           reject(err)
         } else if (this.timeout) {
+          
           timer = await setTimeout(() => {
+           
             clearTimeout(timer)
-            reject(new Error('TIMEOUT_ON_WRITING_MESSAGE'))
+            //reject(new Error('TIMEOUT_ON_WRITING_MESSAGE'))
           }, connect ? 2000 : this.timeout)
         }
       })
